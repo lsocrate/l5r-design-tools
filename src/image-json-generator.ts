@@ -16,83 +16,6 @@ if (packCards.length < 1) {
   process.exit(1);
 }
 
-const factionOrd = {
-  crab: 0,
-  crane: 1,
-  dragon: 2,
-  lion: 3,
-  phoenix: 4,
-  scorpion: 5,
-  unicorn: 6,
-  neutral: 7,
-} as const;
-const sorted = packCards.sort(
-  (a, b) => factionOrd[a.faction] - factionOrd[b.faction]
-);
-const grouped = sorted.reduce(
-  (g, c) => {
-    switch (c.type) {
-      case "stronghold":
-        g.strongholds.push(c);
-        return g;
-      case "province":
-        g.provinces.push(c);
-        return g;
-      case "role":
-        g.roles.push(c);
-        return g;
-      case "holding":
-        g.holdings.push(c);
-        return g;
-      case "attachment":
-        g.attachments.push(c);
-        return g;
-      case "character":
-        switch (c.side) {
-          case "conflict":
-            g.conflictCharacters.push(c);
-            return g;
-          case "dynasty":
-            g.dynastyCharacters.push(c);
-            return g;
-          default:
-            return g;
-        }
-      case "event":
-        switch (c.side) {
-          case "conflict":
-            g.conflictEvents.push(c);
-            return g;
-          case "dynasty":
-            g.dynastyEvents.push(c);
-            return g;
-          default:
-            return g;
-        }
-      default:
-        return g;
-    }
-  },
-  {
-    strongholds: [] as Card[],
-    provinces: [] as Card[],
-    dynastyCharacters: [] as Card[],
-    conflictCharacters: [] as Card[],
-    holdings: [] as Card[],
-    dynastyEvents: [] as Card[],
-    conflictEvents: [] as Card[],
-    attachments: [] as Card[],
-    roles: [] as Card[],
-  }
-);
-
-const createCardNumberGen = (packCode: string) => {
-  let n = 1;
-  return () => `${packCode}${(n++).toString().padStart(2, "0")}`;
-};
-
-const cardNumberGen = createCardNumberGen("ANS");
-
 const title = (c: Card): string => {
   const name = c.name_extra ? `${c.name} ${c.name_extra}` : c.name;
   const unique = c.is_unique ? "[unique] " : "";
@@ -146,55 +69,6 @@ const fateCost = (c: Card) => c.cost ?? "-";
 
 const artist = (c: Card): string => c.versions[0]?.illustrator ?? "";
 
-const shJSON = (c: Card) => {
-  return [];
-};
-
-const provinceJSON = (c: Card) => ({
-  artist: artist(c),
-  artwork: artwork(c),
-  card_frame: `frames/${c.faction}_province.png`,
-  card_id: cardId(c),
-  deck_type: deckType(c),
-  ...provinceElements(c),
-  province_flavour: "",
-  province_strength: c.strength,
-  province_text: text(c),
-  province_title: title(c),
-  province_traits: traits(c),
-});
-
-const characterJSON = (c: Card) => ({
-  artist: artist(c),
-  artwork: artwork(c),
-  card_frame: `frames/${c.faction}_character.png`,
-  card_id: cardId(c),
-  character_flavour: "",
-  character_glory: c.glory ?? 0,
-  character_military: c.military == undefined ? "-" : c.military,
-  character_political: c.political == undefined ? "-" : c.political,
-  character_text: text(c),
-  character_title: title(c),
-  character_traits: traits(c),
-  deck_type: deckType(c),
-  fate_cost: fateCost(c),
-  influence: influence(c),
-});
-
-const eventJSON = (c: Card) => ({
-  artist: artist(c),
-  artwork: artwork(c),
-  card_frame: `frames/${c.faction}_event.png`,
-  card_id: cardId(c),
-  deck_type: deckType(c),
-  event_flavour: "",
-  event_text: text(c),
-  event_title: title(c),
-  event_traits: traits(c),
-  fate_cost: fateCost(c),
-  influence: influence(c),
-});
-
 const holdingModifier = (c: Card) => {
   const mods = {
     holding_modifier: "+",
@@ -233,7 +107,52 @@ const skillModifier = (c: Card) => {
   return mods;
 };
 
-const attachmentJSON = (c: Card) => ({
+const toProvince = (c: Card) => ({
+  artist: artist(c),
+  artwork: artwork(c),
+  card_frame: `frames/${c.faction}_province.png`,
+  card_id: cardId(c),
+  deck_type: deckType(c),
+  ...provinceElements(c),
+  province_flavour: "",
+  province_strength: c.strength,
+  province_text: text(c),
+  province_title: title(c),
+  province_traits: traits(c),
+});
+
+const toCharacter = (c: Card) => ({
+  artist: artist(c),
+  artwork: artwork(c),
+  card_frame: `frames/${c.faction}_character.png`,
+  card_id: cardId(c),
+  character_flavour: "",
+  character_glory: c.glory ?? 0,
+  character_military: c.military == undefined ? "-" : c.military,
+  character_political: c.political == undefined ? "-" : c.political,
+  character_text: text(c),
+  character_title: title(c),
+  character_traits: traits(c),
+  deck_type: deckType(c),
+  fate_cost: fateCost(c),
+  influence: influence(c),
+});
+
+const toEvent = (c: Card) => ({
+  artist: artist(c),
+  artwork: artwork(c),
+  card_frame: `frames/${c.faction}_event.png`,
+  card_id: cardId(c),
+  deck_type: deckType(c),
+  event_flavour: "",
+  event_text: text(c),
+  event_title: title(c),
+  event_traits: traits(c),
+  fate_cost: fateCost(c),
+  influence: influence(c),
+});
+
+const toAttachment = (c: Card) => ({
   artist: artist(c),
   artwork: artwork(c),
   attachment_flavour: "",
@@ -248,7 +167,7 @@ const attachmentJSON = (c: Card) => ({
   influence: influence(c),
 });
 
-const holdingJSON = (c: Card) => ({
+const toHolding = (c: Card) => ({
   artist: artist(c),
   artwork: artwork(c),
   card_frame: `frames/${c.faction}_holding.png`,
@@ -261,15 +180,24 @@ const holdingJSON = (c: Card) => ({
   holding_traits: traits(c),
 });
 
-const artJson = ([] as unknown[]).concat(
-  grouped.strongholds.flatMap(shJSON),
-  grouped.provinces.flatMap(provinceJSON),
-  grouped.holdings.flatMap(holdingJSON),
-  grouped.dynastyCharacters.flatMap(characterJSON),
-  grouped.dynastyEvents.flatMap(eventJSON),
-  grouped.conflictCharacters.flatMap(characterJSON),
-  grouped.conflictEvents.flatMap(eventJSON),
-  grouped.attachments.flatMap(attachmentJSON)
-);
+const toImageJson = (c: Card): any[] => {
+  switch (c.type) {
+    case "province":
+      return [toProvince(c)];
+    case "holding":
+      return [toHolding(c)];
+    case "attachment":
+      return [toAttachment(c)];
+    case "character":
+      return [toCharacter(c)];
+    case "event":
+      return [toEvent(c)];
+    default:
+      return [];
+  }
+};
 
-console.log(JSON.stringify(artJson));
+const artJson = packCards.flatMap(toImageJson);
+const sortedJson = artJson.sort((a, b) => a.card_id.localeCompare(b.card_id));
+
+console.log(JSON.stringify(sortedJson));
