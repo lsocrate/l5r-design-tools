@@ -118,10 +118,9 @@ const text = (c: Card): string =>
 const influence = (c: Card) =>
   c.influence_cost ? `influence/${c.influence_cost}.png` : undefined;
 
-const idStuff = (id: string) => ({
-  card_id: id,
-  artwork: `artworks/${id}.jpg`,
-});
+const cardId = (c: Card) => `AnS${c.versions[0]?.position}`;
+
+const artwork = (c: Card) => `artworks/AnS${c.versions[0]?.position}.jpg`;
 
 const deckType = (c: Card) => {
   switch (c.side) {
@@ -147,55 +146,69 @@ const fateCost = (c: Card) => c.cost ?? "-";
 
 const artist = (c: Card): string => c.versions[0]?.illustrator ?? "";
 
-const shJSON = (nextCardNumber: () => string) => (c: Card) => {
+const shJSON = (c: Card) => {
   return [];
 };
 
-const provinceJSON = (nextCardNumber: () => string) => (c: Card) => ({
-  ...idStuff(nextCardNumber()),
-  ...provinceElements(c),
-  card_frame: `frames/${c.faction}_province.png`,
+const provinceJSON = (c: Card) => ({
   artist: artist(c),
+  artwork: artwork(c),
+  card_frame: `frames/${c.faction}_province.png`,
+  card_id: cardId(c),
   deck_type: deckType(c),
-  province_title: title(c),
-  province_traits: traits(c),
-  province_text: text(c),
+  ...provinceElements(c),
   province_flavour: "",
   province_strength: c.strength,
-  province_unique: c.is_unique,
+  province_text: text(c),
+  province_title: title(c),
+  province_traits: traits(c),
 });
 
-const characterJSON = (nextCardNumber: () => string) => (c: Card) => ({
-  ...idStuff(nextCardNumber()),
-  card_frame: `frames/${c.faction}_character.png`,
+const characterJSON = (c: Card) => ({
   artist: artist(c),
-  deck_type: deckType(c),
-  fate_cost: fateCost(c),
-  character_title: title(c),
-  character_traits: traits(c),
-  character_text: text(c),
+  artwork: artwork(c),
+  card_frame: `frames/${c.faction}_character.png`,
+  card_id: cardId(c),
   character_flavour: "",
-  character_unique: c.is_unique,
+  character_glory: c.glory ?? 0,
   character_military: c.military == undefined ? "-" : c.military,
   character_political: c.political == undefined ? "-" : c.political,
-  character_glory: c.glory ?? 0,
-  influence: influence(c),
-});
-
-const eventJSON = (nextCardNumber: () => string) => (c: Card) => ({
-  ...idStuff(nextCardNumber()),
-  card_frame: `frames/${c.faction}_event.png`,
-  artist: artist(c),
+  character_text: text(c),
+  character_title: title(c),
+  character_traits: traits(c),
   deck_type: deckType(c),
   fate_cost: fateCost(c),
   influence: influence(c),
-  event_title: title(c),
-  event_traits: traits(c),
-  event_text: text(c),
-  event_flavour: "",
 });
 
-const modifier = (c: Card) => {
+const eventJSON = (c: Card) => ({
+  artist: artist(c),
+  artwork: artwork(c),
+  card_frame: `frames/${c.faction}_event.png`,
+  card_id: cardId(c),
+  deck_type: deckType(c),
+  event_flavour: "",
+  event_text: text(c),
+  event_title: title(c),
+  event_traits: traits(c),
+  fate_cost: fateCost(c),
+  influence: influence(c),
+});
+
+const holdingModifier = (c: Card) => {
+  const mods = {
+    holding_modifier: "+",
+    holding_modifier_value: 0,
+  };
+  if (c.strength_bonus) {
+    mods.holding_modifier = c.strength_bonus[0];
+    mods.holding_modifier_value = parseInt(c.strength_bonus.slice(1), 10);
+  }
+
+  return mods;
+};
+
+const skillModifier = (c: Card) => {
   const mods = {
     attachment_military_modifier: "+",
     attachment_military_modifier_value: 0,
@@ -204,42 +217,59 @@ const modifier = (c: Card) => {
   };
   if (c.military_bonus) {
     mods.attachment_military_modifier = c.military_bonus[0];
-    mods.attachment_military_modifier_value = parseInt(c.military_bonus[1], 10);
+    mods.attachment_military_modifier_value = parseInt(
+      c.military_bonus.slice(1),
+      10
+    );
   }
 
   if (c.political_bonus) {
     mods.attachment_political_modifier = c.political_bonus[0];
     mods.attachment_political_modifier_value = parseInt(
-      c.political_bonus[1],
+      c.political_bonus.slice(1),
       10
     );
   }
   return mods;
 };
 
-const attachmentJSON = (nextCardNumber: () => string) => (c: Card) => ({
-  ...idStuff(nextCardNumber()),
-  card_frame: `frames/${c.faction}_event.png`,
+const attachmentJSON = (c: Card) => ({
   artist: artist(c),
+  artwork: artwork(c),
+  attachment_flavour: "",
+  ...skillModifier(c),
+  attachment_text: text(c),
+  attachment_title: title(c),
+  attachment_traits: traits(c),
+  card_frame: `frames/${c.faction}_attachment.png`,
+  card_id: cardId(c),
   deck_type: deckType(c),
   fate_cost: fateCost(c),
   influence: influence(c),
-  attachment_title: title(c),
-  attachment_traits: traits(c),
-  attachment_text: text(c),
-  attachment_flavour: "",
-  attachment_unique: c.is_unique,
-  ...modifier(c),
+});
+
+const holdingJSON = (c: Card) => ({
+  artist: artist(c),
+  artwork: artwork(c),
+  card_frame: `frames/${c.faction}_holding.png`,
+  card_id: cardId(c),
+  deck_type: deckType(c),
+  holding_flavour: "",
+  ...holdingModifier(c),
+  holding_text: text(c),
+  holding_title: title(c),
+  holding_traits: traits(c),
 });
 
 const artJson = ([] as unknown[]).concat(
-  grouped.strongholds.flatMap(shJSON(cardNumberGen)),
-  grouped.provinces.flatMap(provinceJSON(cardNumberGen)),
-  grouped.dynastyCharacters.flatMap(characterJSON(cardNumberGen)),
-  grouped.conflictCharacters.flatMap(characterJSON(cardNumberGen)),
-  grouped.dynastyEvents.flatMap(eventJSON(cardNumberGen)),
-  grouped.conflictEvents.flatMap(eventJSON(cardNumberGen)),
-  grouped.attachments.flatMap(attachmentJSON(cardNumberGen))
+  grouped.strongholds.flatMap(shJSON),
+  grouped.provinces.flatMap(provinceJSON),
+  grouped.holdings.flatMap(holdingJSON),
+  grouped.dynastyCharacters.flatMap(characterJSON),
+  grouped.dynastyEvents.flatMap(eventJSON),
+  grouped.conflictCharacters.flatMap(characterJSON),
+  grouped.conflictEvents.flatMap(eventJSON),
+  grouped.attachments.flatMap(attachmentJSON)
 );
 
 console.log(JSON.stringify(artJson));

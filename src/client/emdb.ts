@@ -71,7 +71,7 @@ export type Card = {
   side: Side;
   splash_banned_in: [];
   strength: null;
-  strength_bonus: null;
+  strength_bonus: null | string;
   text: string;
   traits: null | string[];
   type: CardType;
