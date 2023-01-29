@@ -1,15 +1,14 @@
 import { Card, fetchCards } from "./client/emdb.js";
-import { parseCli } from "./parser.js";
 
-const cli = parseCli();
-if (cli.error !== undefined) {
-  console.error(cli.error);
+const [, , pack, packCode] = process.argv;
+if (!pack || !packCode) {
+  console.error("Pack and packcode params are required");
   process.exit(1);
 }
 
 const allCards = await fetchCards();
 const packCards = allCards.filter((c) =>
-  c.versions.some((v) => v.pack_id === cli.args.pack)
+  c.versions.some((v) => v.pack_id === pack)
 );
 if (packCards.length < 1) {
   console.error("the chosen pack has no cards");
@@ -41,9 +40,10 @@ const text = (c: Card): string =>
 const influence = (c: Card) =>
   c.influence_cost ? `influence/${c.influence_cost}.png` : undefined;
 
-const cardId = (c: Card) => `AnS${c.versions[0]?.position}`;
+const cardId = (c: Card) => `${packCode}${c.versions[0]?.position}`;
 
-const artwork = (c: Card) => `artworks/AnS${c.versions[0]?.position}.jpg`;
+const artwork = (c: Card) =>
+  `artworks/${packCode}${c.versions[0]?.position}.jpg`;
 
 const deckType = (c: Card) => {
   switch (c.side) {
@@ -107,12 +107,29 @@ const skillModifier = (c: Card) => {
   return mods;
 };
 
+const toStronghold = (c: Card) => ({
+  artist: artist(c),
+  artwork: artwork(c),
+  card_frame: `frames/${c.faction}_stronghold.png`,
+  card_id: cardId(c),
+  stronghold_fate: c.fate ?? 7,
+  stronghold_flavour: "",
+  stronghold_honour: c.honor ?? 99,
+  stronghold_influence: c.influence_pool ?? 10,
+  stronghold_modifier: c.strength_bonus?.[0] ?? "+",
+  stronghold_modifier_value: c.strength_bonus
+    ? parseInt(c.strength_bonus.slice(1), 10)
+    : 0,
+  stronghold_text: text(c),
+  stronghold_title: title(c),
+  stronghold_traits: traits(c),
+});
+
 const toProvince = (c: Card) => ({
   artist: artist(c),
   artwork: artwork(c),
   card_frame: `frames/${c.faction}_province.png`,
   card_id: cardId(c),
-  deck_type: deckType(c),
   ...provinceElements(c),
   province_flavour: "",
   province_strength: c.strength,
@@ -192,6 +209,8 @@ const toImageJson = (c: Card): any[] => {
       return [toCharacter(c)];
     case "event":
       return [toEvent(c)];
+    case "stronghold":
+      return [toStronghold(c)];
     default:
       return [];
   }
