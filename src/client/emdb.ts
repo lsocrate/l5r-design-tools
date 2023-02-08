@@ -53,12 +53,13 @@ export type Card = {
   cost: null | string;
   deck_limit: 3;
   elements: Element[];
+  fate: null | number;
   faction: Faction;
   glory: null | number;
-  honor: null;
+  honor: null | number;
   id: string;
   influence_cost: null | number;
-  influence_pool: null;
+  influence_pool: null | number;
   is_unique: false;
   military: null | number;
   military_bonus: null | string;
@@ -83,3 +84,11 @@ export const fetchPacks = (): Promise<Pack[]> =>
 
 export const fetchCards = (): Promise<Card[]> =>
   fetch(`${EMDB}/api/cards`).then((res) => res.json());
+
+export const fetchTraits = (): Promise<Map<string, string>> =>
+  fetch(`${EMDB}/api/traits`)
+    .then((res) => res.json())
+    .then(
+      (traits: Array<{ id: string; name: string }>) =>
+        new Map(traits.map((t) => [t.id, t.name]))
+    );

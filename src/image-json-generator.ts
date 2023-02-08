@@ -1,4 +1,4 @@
-import { Card, fetchCards } from "./client/emdb.js";
+import { Card, fetchCards, fetchTraits } from "./client/emdb.js";
 
 const [, , pack, packCode] = process.argv;
 if (!pack || !packCode) {
@@ -6,7 +6,7 @@ if (!pack || !packCode) {
   process.exit(1);
 }
 
-const allCards = await fetchCards();
+const [traitMap, allCards] = await Promise.all([fetchTraits(), fetchCards()]);
 const packCards = allCards.filter((c) =>
   c.versions.some((v) => v.pack_id === pack)
 );
@@ -25,13 +25,10 @@ const traits = (c: Card): string =>
   !c.traits || c.traits.length < 1
     ? ""
     : c.traits
-        .map(
-          (t) =>
-            t
-              .split("-")
-              .map((w) => w[0].toUpperCase() + w.slice(1))
-              .join(" ") // non-breaking space
-        )
+        .flatMap((traitId) => {
+          const traitName = traitMap.get(traitId);
+          return traitName ? [traitName] : [];
+        })
         .join(". ") + ".";
 
 const text = (c: Card): string =>
