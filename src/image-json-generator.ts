@@ -37,7 +37,7 @@ const text = (c: Card): string =>
 const influence = (c: Card) =>
   c.influence_cost ? `influence/${c.influence_cost}.png` : undefined;
 
-const cardId = (c: Card) => `${packCode}${c.versions[0]?.position}`;
+const cardId = (c: Card) => c.versions[0]?.position;
 
 const artwork = (c: Card) =>
   `artworks/${packCode}${c.versions[0]?.position}.jpg`;
