@@ -15,34 +15,43 @@ if (packCards.length < 1) {
   process.exit(1);
 }
 
-const title = (c: Card): string => {
+function title(c: Card): string {
   const name = c.name_extra ? `${c.name} ${c.name_extra}` : c.name;
   const unique = c.is_unique ? "[unique] " : "";
   return `${unique}${name}`;
-};
+}
 
-const traits = (c: Card): string =>
-  !c.traits || c.traits.length < 1
-    ? ""
-    : c.traits
-        .flatMap((traitId) => {
-          const traitName = traitMap.get(traitId);
-          return traitName ? [traitName] : [];
-        })
-        .join(". ") + ".";
+function traits(c: Card): string {
+  if (!c.traits || c.traits.length < 1) {
+    return "";
+  }
 
-const text = (c: Card): string =>
-  c.text.length < 1 ? "" : c.text.replaceAll("<br/>", "\n");
+  return (
+    c.traits.flatMap((traitId) => traitMap.get(traitId) ?? []).join(". ") + "."
+  );
+}
 
-const influence = (c: Card) =>
-  c.influence_cost ? `influence/${c.influence_cost}.png` : undefined;
+function text(c: Card): string {
+  return c.text.length < 1 ? "" : c.text.replaceAll("<br/>", "\n");
+}
 
-const cardId = (c: Card) => c.versions[0]?.position;
+function influence(c: Card) {
+  return c.influence_cost ? `influence/${c.influence_cost}.png` : undefined;
+}
 
-const artwork = (c: Card) =>
-  `artworks/${packCode}${c.versions[0]?.position}.jpg`;
+function cardId(c: Card): string {
+  return c.versions[0]?.position;
+}
 
-const deckType = (c: Card) => {
+function flavor(c: Card): string {
+  return c.versions[0]?.flavor ?? "";
+}
+
+function artwork(c: Card): string {
+  return `artworks/${packCode}${c.versions[0]?.position}.jpg`;
+}
+
+function deckType(c: Card) {
   switch (c.side) {
     case "conflict":
       return "C";
@@ -51,35 +60,40 @@ const deckType = (c: Card) => {
     default:
       return "";
   }
-};
+}
 
-const provinceElements = (c: Card) => {
+function provinceElements(c: Card) {
   const els = c.elements.sort();
-  return els.length === 5
-    ? { province_element: "elements/tomoe.png" }
-    : els.length === 1
-    ? { province_element: `elements/${els[0]}.png` }
-    : { province_element_pair: `elements/${els[0]}_${els[1]}.png` };
-};
+  switch (els.length) {
+    case 5:
+      return { province_element: "elements/tomoe.png" };
+    case 1:
+      return { province_element: `elements/${els[0]}.png` };
+    default:
+      return { province_element_pair: `elements/${els[0]}_${els[1]}.png` };
+  }
+}
 
-const fateCost = (c: Card) => c.cost ?? "-";
+function fateCost(c: Card) {
+  return c.cost ?? "-";
+}
 
-const artist = (c: Card): string => c.versions[0]?.illustrator ?? "";
+function artist(c: Card): string {
+  return c.versions[0]?.illustrator ?? "";
+}
 
-const holdingModifier = (c: Card) => {
-  const mods = {
-    holding_modifier: "+",
-    holding_modifier_value: 0,
-  };
+function holdingModifier(c: Card) {
   if (c.strength_bonus) {
-    mods.holding_modifier = c.strength_bonus[0];
-    mods.holding_modifier_value = parseInt(c.strength_bonus.slice(1), 10);
+    return {
+      holding_modifier: c.strength_bonus[0],
+      holding_modifier_value: parseInt(c.strength_bonus.slice(1), 10),
+    };
   }
 
-  return mods;
-};
+  return { holding_modifier: "+", holding_modifier_value: 0 };
+}
 
-const skillModifier = (c: Card) => {
+function skillModifier(c: Card) {
   const mods = {
     attachment_military_modifier: "+",
     attachment_military_modifier_value: 0,
@@ -102,7 +116,7 @@ const skillModifier = (c: Card) => {
     );
   }
   return mods;
-};
+}
 
 const toStronghold = (c: Card) => ({
   artist: artist(c),
@@ -110,7 +124,7 @@ const toStronghold = (c: Card) => ({
   card_frame: `frames/${c.faction}_stronghold.png`,
   card_id: cardId(c),
   stronghold_fate: c.fate ?? 7,
-  stronghold_flavour: "",
+  stronghold_flavour: flavor(c),
   stronghold_honour: c.honor ?? 99,
   stronghold_influence: c.influence_pool ?? 10,
   stronghold_modifier: c.strength_bonus?.[0] ?? "+",
@@ -128,7 +142,7 @@ const toProvince = (c: Card) => ({
   card_frame: `frames/${c.faction}_province.png`,
   card_id: cardId(c),
   ...provinceElements(c),
-  province_flavour: "",
+  province_flavour: flavor(c),
   province_strength: c.strength,
   province_text: text(c),
   province_title: title(c),
@@ -140,7 +154,7 @@ const toCharacter = (c: Card) => ({
   artwork: artwork(c),
   card_frame: `frames/${c.faction}_character.png`,
   card_id: cardId(c),
-  character_flavour: "",
+  character_flavour: flavor(c),
   character_glory: c.glory ?? 0,
   character_military: c.military == undefined ? "-" : c.military,
   character_political: c.political == undefined ? "-" : c.political,
@@ -158,7 +172,7 @@ const toEvent = (c: Card) => ({
   card_frame: `frames/${c.faction}_event.png`,
   card_id: cardId(c),
   deck_type: deckType(c),
-  event_flavour: "",
+  event_flavour: flavor(c),
   event_text: text(c),
   event_title: title(c),
   event_traits: traits(c),
@@ -169,7 +183,7 @@ const toEvent = (c: Card) => ({
 const toAttachment = (c: Card) => ({
   artist: artist(c),
   artwork: artwork(c),
-  attachment_flavour: "",
+  attachment_flavour: flavor(c),
   ...skillModifier(c),
   attachment_text: text(c),
   attachment_title: title(c),
@@ -187,7 +201,7 @@ const toHolding = (c: Card) => ({
   card_frame: `frames/${c.faction}_holding.png`,
   card_id: cardId(c),
   deck_type: deckType(c),
-  holding_flavour: "",
+  holding_flavour: flavor(c),
   ...holdingModifier(c),
   holding_text: text(c),
   holding_title: title(c),
