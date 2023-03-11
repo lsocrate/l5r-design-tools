@@ -32,7 +32,13 @@ function traits(c: Card): string {
 }
 
 function text(c: Card): string {
-  return c.text.length < 1 ? "" : c.text.replaceAll("<br/>", "\n");
+  return c.text.length < 1
+    ? ""
+    : c.text
+        .replaceAll("<br/>", "\n")
+        .replace(/[+-][X\d]/g, (match) =>
+          match[0] === "+" ? `+${match[1]}` : `−${match[1]}`
+        );
 }
 
 function influence(c: Card) {
