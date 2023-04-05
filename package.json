@@ -2,12 +2,16 @@
   "name": "l5r-design-tools",
   "version": "1.0.0",
   "main": "index.js",
+  "devDependencies": {
+    "@types/node": "^18.11.18",
+    "typescript": "^4.9.4"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "type": "module",
-  "devDependencies": {
-    "@types/node": "^18.11.18",
-    "typescript": "^4.9.4"
+  "dependencies": {
+    "@types/elo-rank": "^1.0.1",
+    "elo-rank": "^1.0.4"
   }
 }
