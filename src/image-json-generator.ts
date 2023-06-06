@@ -1,4 +1,4 @@
-import { Card, fetchCards, fetchTraits } from "./client/emdb.js";
+import { Card, Version, fetchCards, fetchTraits } from "./client/emdb.js";
 
 const [, , pack, packCode] = process.argv;
 if (!pack || !packCode) {
@@ -174,7 +174,7 @@ function traits(c: Card): string {
 }
 
 function text(c: Card): string {
-  return c.text.length < 1
+  return !c.text
     ? ""
     : c.text
         .replaceAll("<br/>", "\n") // line breaks
@@ -189,16 +189,24 @@ function influence(c: Card) {
   return c.influence_cost ? `influence/${c.influence_cost}.png` : undefined;
 }
 
+function version(c: Card): Version {
+  const version = c.versions.find((v) => v.pack_id === pack);
+  if (!version) {
+    throw Error(`BAD VERSION FOR ${c}`);
+  }
+  return version;
+}
+
 function cardId(c: Card): string {
-  return c.versions[0]?.position;
+  return version(c).position;
 }
 
 function flavor(c: Card): string {
-  return c.versions[0]?.flavor ?? "";
+  return version(c).flavor ?? "";
 }
 
 function artwork(c: Card): string {
-  return `artworks/${packCode}${c.versions[0]?.position}.jpg`;
+  return `artworks/${packCode}${cardId(c).padStart(3, "0")}.jpg`;
 }
 
 function deckType(c: Card) {
@@ -229,7 +237,7 @@ function fateCost(c: Card) {
 }
 
 function artist(c: Card): string {
-  return c.versions[0]?.illustrator ?? "";
+  return version(c).illustrator ?? "";
 }
 
 function holdingModifier(c: Card) {

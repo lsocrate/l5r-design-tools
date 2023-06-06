@@ -11,7 +11,7 @@ type Pack = {
   size: number;
 };
 
-type Version = {
+export type Version = {
   flavor: null | string;
   card_id: string;
   illustrator: string;
@@ -49,7 +49,7 @@ type Element = "air" | "earth" | "fire" | "water" | "void";
 
 export type Card = {
   allowed_clans: Clan[];
-  banned_in: [];
+  banned_in: string[];
   cost: null | string;
   deck_limit: 3;
   elements: Element[];
@@ -67,13 +67,13 @@ export type Card = {
   name_extra: null | string;
   political: null | number;
   political_bonus: null | string;
-  restricted_in: [];
-  role_restrictions: [];
+  restricted_in: string[];
+  role_restrictions: string[];
   side: Side;
-  splash_banned_in: [];
-  strength: null;
+  splash_banned_in: null | string[];
+  strength: null | string;
   strength_bonus: null | string;
-  text: string;
+  text: null | string;
   traits: null | string[];
   type: CardType;
   versions: Version[];
