@@ -36,6 +36,7 @@ function toImageJson(
   | ReturnType<typeof toCharacter>
   | ReturnType<typeof toEvent>
   | ReturnType<typeof toStronghold>
+  | ReturnType<typeof toRole>
 > {
   switch (c.type) {
     case "province":
@@ -50,6 +51,8 @@ function toImageJson(
       return [toEvent(c)];
     case "stronghold":
       return [toStronghold(c)];
+    case "role":
+      return [toRole(c)];
     default:
       return [];
   }
@@ -65,13 +68,23 @@ function toStronghold(c: Card) {
     stronghold_flavour: flavor(c),
     stronghold_honour: c.honor ?? 99,
     stronghold_influence: c.influence_pool ?? 10,
-    stronghold_modifier: c.strength_bonus?.[0] ?? "+",
-    stronghold_modifier_value: c.strength_bonus
-      ? parseInt(c.strength_bonus.slice(1), 10)
-      : 0,
+    stronghold_modifier_value: c.strength_bonus,
     stronghold_text: text(c),
     stronghold_title: title(c),
     stronghold_traits: traits(c),
+  };
+}
+
+function toRole(c: Card) {
+  return {
+    artist: artist(c),
+    artwork: artwork(c),
+    card_frame: `frames/${c.faction}_role.png`,
+    card_id: cardId(c),
+    role_flavour: flavor(c),
+    role_text: text(c),
+    role_title: title(c),
+    role_traits: traits(c),
   };
 }
 
