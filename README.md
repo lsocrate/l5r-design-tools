@@ -13,3 +13,11 @@ bun src/image-json-generator.ts <PACK ID> <PACK ABBREVIATION> > <FILENAME FOR OU
 # Example
 bun src/image-json-generator.ts restoration-of-balance RoB > restoration-of-balance-2023-01-29-2.json
 ```
+
+## Update version data for cards
+
+Edit `src/update-card-cycle.ts`: you need to add your Bearer token on the top of the file. Do not commit your changes, you don't want to leak your token online. Then:
+
+```sh
+bun src/update-card-cycle.ts
+```
