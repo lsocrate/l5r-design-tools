@@ -6,14 +6,20 @@ if (!pack || !packCode) {
   process.exit(1);
 }
 
+const PLUS = "+";
+const MINUS = "−";
+
 const [traitMap, allCards] = await Promise.all([fetchTraits(), fetchCards()]);
 
 main(pack, allCards);
 
-function main(pack: string, allCards: Card[]) {
-  const packCards = allCards.filter((c) =>
-    c.versions.some((v) => v.pack_id === pack)
-  );
+function main(pack: string, allCards: Map<string, Card>) {
+  const packCards: Card[] = [];
+  for (const c of allCards.values()) {
+    if (c.versions.some((v) => v.pack_id === pack)) {
+      packCards.push(c);
+    }
+  }
   if (packCards.length < 1) {
     console.error("the chosen pack has no cards");
     process.exit(1);
@@ -68,7 +74,11 @@ function toStronghold(c: Card) {
     stronghold_flavour: flavor(c),
     stronghold_honour: c.honor ?? 99,
     stronghold_influence: c.influence_pool ?? 10,
-    stronghold_modifier_value: c.strength_bonus,
+    stronghold_modifier: modifier(c.strength_bonus?.[0]),
+    stronghold_modifier_value: (c.strength_bonus
+      ? parseInt(c.strength_bonus.slice(1), 10)
+      : 0
+    ).toString(),
     stronghold_text: text(c),
     stronghold_title: title(c),
     stronghold_traits: traits(c),
@@ -192,10 +202,17 @@ function text(c: Card): string {
     : c.text
         .replaceAll("<br/>", "\n") // line breaks
         .replaceAll(" - ", " – ") // hyphen to en-dash on cost - effect separation
-        .replace(
-          /[+-][X\d]/g,
-          (match) => (match[0] === "+" ? `+${match[1]}` : `−${match[1]}`) // proper math symbols
-        );
+        .replace(/[+-][X\d]/g, (match) => `${modifier(match[0])}${match[1]}`);
+}
+
+function modifier(char?: string): string {
+  switch (char) {
+    case "-":
+      return MINUS;
+    case "+":
+    default:
+      return PLUS;
+  }
 }
 
 function influence(c: Card) {
@@ -256,23 +273,23 @@ function artist(c: Card): string {
 function holdingModifier(c: Card) {
   if (c.strength_bonus) {
     return {
-      holding_modifier: c.strength_bonus[0],
+      holding_modifier: modifier(c.strength_bonus[0]),
       holding_modifier_value: parseInt(c.strength_bonus.slice(1), 10),
     };
   }
 
-  return { holding_modifier: "+", holding_modifier_value: 0 };
+  return { holding_modifier: PLUS, holding_modifier_value: 0 };
 }
 
 function skillModifier(c: Card) {
   const mods = {
-    attachment_military_modifier: "+",
+    attachment_military_modifier: PLUS,
     attachment_military_modifier_value: 0,
-    attachment_political_modifier: "+",
+    attachment_political_modifier: PLUS,
     attachment_political_modifier_value: 0,
   };
   if (c.military_bonus) {
-    mods.attachment_military_modifier = c.military_bonus[0];
+    mods.attachment_military_modifier = modifier(c.military_bonus[0]);
     mods.attachment_military_modifier_value = parseInt(
       c.military_bonus.slice(1),
       10
@@ -280,7 +297,7 @@ function skillModifier(c: Card) {
   }
 
   if (c.political_bonus) {
-    mods.attachment_political_modifier = c.political_bonus[0];
+    mods.attachment_political_modifier = modifier(c.political_bonus[0]);
     mods.attachment_political_modifier_value = parseInt(
       c.political_bonus.slice(1),
       10

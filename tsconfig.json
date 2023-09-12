@@ -2,7 +2,6 @@
   "include": ["src/csv-generator.ts", "src/image-json-generator.ts"],
   "compilerOptions": {
     "baseUrl": ".",
-    "esModuleInterop": true,
     "incremental": true,
     "module": "ES2022",
     "moduleResolution": "node",

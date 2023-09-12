@@ -82,8 +82,16 @@ export type Card = {
 export const fetchPacks = (): Promise<Pack[]> =>
   fetch(`${EMDB}/api/packs`).then((res) => res.json());
 
-export const fetchCards = (): Promise<Card[]> =>
-  fetch(`${EMDB}/api/cards`).then((res) => res.json());
+export const fetchCards = (): Promise<Map<string, Card>> =>
+  fetch(`${EMDB}/api/cards`)
+    .then((res) => res.json())
+    .then((cs: Card[]) => {
+      const map = new Map();
+      for (const c of cs) {
+        map.set(c.id, c);
+      }
+      return map;
+    });
 
 export const fetchTraits = (): Promise<Map<string, string>> =>
   fetch(`${EMDB}/api/traits`)
