@@ -2,6 +2,8 @@ import { Card, fetchCards } from "./client/emdb.js";
 
 const pack_id = "core-set-2";
 
+const BEARER_TOKEN = "CHANGE_ME";
+
 function* positionMaker(start: number) {
   let i = start;
   while (true) {
@@ -74,8 +76,7 @@ fetchCards()
   .then((cardsInPacks) =>
     fetch("https://beta-emeralddb.herokuapp.com/api/cards-in-packs", {
       headers: {
-        authorization:
-          "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Im10TTV4SnlXMEFIMmt0b1FQVWpRVSJ9.eyJpc3MiOiJodHRwczovL2Rldi00bDg0OW1pNy5ldS5hdXRoMC5jb20vIiwic3ViIjoiYXV0aDB8NjBjYjZjMThiODZiNDUwMDcwYjhhMWNjIiwiYXVkIjpbImh0dHA6Ly9maXZlcmluZ3NkYi5jb20iLCJodHRwczovL2Rldi00bDg0OW1pNy5ldS5hdXRoMC5jb20vdXNlcmluZm8iXSwiaWF0IjoxNjk0NDQyNDcwLCJleHAiOjE2OTQ1Mjg4NzAsImF6cCI6InR1VXRlYzBtZmhFd3E0Vk1Fa1ZPMVNOU2p5N2JoaEpZIiwic2NvcGUiOiJvcGVuaWQgcHJvZmlsZSBlbWFpbCJ9.2q7a4y4XJ9pd0HyM_PAWFATkngVUCRE5a8WQh4xb3h0mM9ZAZFeIQgbYBK_8x46Uvss1nBELNN0QWMuaAh4HfxcjKhHxdl3Ysw3fp4LNsJdnVJ8x5m4VWBmX1I5rvJHUdqJ4iqoM2l3pxIG7ZQA5glrXnRM7_0Cv4XnE2QLNUugFskjf-bMH1GgMs_QTKhNRQMNvatcCaYkxbgv3BbR8t7X_Fa49k1Mr2RAtXWQkn2PuLUpwyDSS-qPh7DA1LovpR8RgaSoJTWGrNodXp3IknkxQaZeRuTVLiE7HQir8SinnjcxVCBo0UXbfztDvWiU5LvI1CIu1AtGEOZQINYGvvQ",
+        authorization: `Bearer ${BEARER_TOKEN}`,
         "content-type": "application/json;charset=UTF-8",
       },
       method: "POST",
