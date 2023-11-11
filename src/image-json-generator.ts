@@ -8,6 +8,38 @@ if (!pack || !packCode) {
 
 const PLUS = "+";
 const MINUS = "−";
+const costRestrictionForCard = new Map<string, "on_play" | "constant">([
+  // THROUGH THE MISTS
+  ["stinger", "on_play"],
+  ["honest-assessment", "constant"],
+
+  // Ancient Secrets
+  ["there-are-no-secrets", "on_play"],
+
+  // Ancient Secrets
+  ["developing-masterpiece", "on_play"],
+  ["promising-hohei", "on_play"],
+  ["writ-of-survey", "on_play"],
+  ["shiba-s-oath", "constant"],
+  ["the-lion-s-shadow", "constant"],
+  ["writ-of-sanctification", "constant"],
+  ["bamboo-tattoo", "constant"],
+
+  // CORE 2
+  ["cloud-the-mind-2", "on_play"],
+  ["ward-of-earthen-thorns", "on_play"],
+  ["pacifism", "on_play"],
+  ["sato", "on_play"],
+  ["armor-of-the-fallen", "constant"],
+  ["biting-steel", "constant"],
+  ["centipede-tattoo", "constant"],
+  ["dai-tsuchi", "constant"],
+  ["declaration-of-dominion", "constant"],
+  ["grasp-of-earth-2", "constant"],
+  ["mountain-tattoo", "constant"],
+  ["sashimono", "constant"],
+  ["ward-of-earthen-thorns", "constant"],
+]);
 
 const [traitMap, allCards] = await Promise.all([fetchTraits(), fetchCards()]);
 
@@ -17,7 +49,9 @@ function main(pack: string, allCards: Map<string, Card>) {
   const packCards: Card[] = [];
   for (const c of allCards.values()) {
     if (c.versions.some((v) => v.pack_id === pack)) {
-      packCards.push(c);
+      if (version(c).position !== "0") {
+        packCards.push(c);
+      }
     }
   }
   if (packCards.length < 1) {
@@ -27,14 +61,14 @@ function main(pack: string, allCards: Map<string, Card>) {
 
   const artJson = packCards.flatMap(toImageJson);
   const sortedJson = artJson.sort(
-    (a, b) => parseInt(a.card_id, 10) - parseInt(b.card_id, 10)
+    (a, b) => parseInt(a.card_id, 10) - parseInt(b.card_id, 10),
   );
 
   console.log(JSON.stringify(sortedJson));
 }
 
 function toImageJson(
-  c: Card
+  c: Card,
 ): Array<
   | ReturnType<typeof toProvince>
   | ReturnType<typeof toHolding>
@@ -152,6 +186,7 @@ function toAttachment(c: Card) {
   return {
     artist: artist(c),
     artwork: artwork(c),
+    ...costRestriction(c),
     attachment_flavour: flavor(c),
     ...skillModifier(c),
     attachment_text: text(c),
@@ -181,9 +216,8 @@ function toHolding(c: Card) {
 }
 
 function title(c: Card): string {
-  const name = c.name_extra ? `${c.name} ${c.name_extra}` : c.name;
   const unique = c.is_unique ? "[unique] " : "";
-  return `${unique}${name}`;
+  return `${unique}${c.name}`;
 }
 
 function traits(c: Card): string {
@@ -217,6 +251,14 @@ function modifier(char?: string): string {
 
 function influence(c: Card) {
   return c.influence_cost ? `influence/${c.influence_cost}.png` : undefined;
+}
+
+function costRestriction(c: Card) {
+  const r = costRestrictionForCard.get(c.id);
+  return {
+    attachment_cost_on_play_restriction: r === "on_play" ? "*" : "",
+    attachment_cost_constant_restriction: r === "constant" ? "[]" : "",
+  };
 }
 
 function version(c: Card): Version {
@@ -271,37 +313,57 @@ function artist(c: Card): string {
 }
 
 function holdingModifier(c: Card) {
-  if (c.strength_bonus) {
+  const value = c.strength_bonus ? parseInt(c.strength_bonus, 10) : undefined;
+  if (value === undefined) {
     return {
-      holding_modifier: modifier(c.strength_bonus[0]),
-      holding_modifier_value: parseInt(c.strength_bonus.slice(1), 10),
+      holding_modifier: PLUS,
+      holding_modifier_value: 0,
+      holding_penalty: "",
+      holding_penalty_value: "",
     };
   }
-
-  return { holding_modifier: PLUS, holding_modifier_value: 0 };
+  if (value < 0) {
+    return {
+      holding_modifier: "",
+      holding_modifier_value: "",
+      holding_penalty: MINUS,
+      holding_penalty_value: value,
+    };
+  }
+  return {
+    holding_modifier: PLUS,
+    holding_modifier_value: value,
+    holding_penalty: "",
+    holding_penalty_value: "",
+  };
 }
 
 function skillModifier(c: Card) {
   const mods = {
     attachment_military_modifier: PLUS,
-    attachment_military_modifier_value: 0,
+    attachment_military_modifier_value: "0",
     attachment_political_modifier: PLUS,
-    attachment_political_modifier_value: 0,
+    attachment_political_modifier_value: "0",
   };
   if (c.military_bonus) {
-    mods.attachment_military_modifier = modifier(c.military_bonus[0]);
-    mods.attachment_military_modifier_value = parseInt(
-      c.military_bonus.slice(1),
-      10
-    );
+    const res = splitBonus(c.military_bonus);
+    mods.attachment_military_modifier = res.mod;
+    mods.attachment_military_modifier_value = res.val;
   }
 
   if (c.political_bonus) {
-    mods.attachment_political_modifier = modifier(c.political_bonus[0]);
-    mods.attachment_political_modifier_value = parseInt(
-      c.political_bonus.slice(1),
-      10
-    );
+    const res = splitBonus(c.political_bonus);
+    mods.attachment_political_modifier = res.mod;
+    mods.attachment_political_modifier_value = res.val;
   }
   return mods;
+}
+
+function splitBonus(str: string) {
+  if (str === "-") {
+    return { mod: "", val: "-" };
+  }
+  const mod = modifier(str[0]);
+  const val = parseInt(str.slice(1), 10).toString();
+  return { mod, val };
 }

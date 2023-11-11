@@ -2,7 +2,7 @@ import { Card, fetchCards } from "./client/emdb.js";
 
 const pack_id = "core-set-2";
 
-const BEARER_TOKEN = "CHANGE_ME";
+const BEARER_TOKEN = "";
 
 function* positionMaker(start: number) {
   let i = start;
@@ -10,6 +10,82 @@ function* positionMaker(start: number) {
     let str = i.toString();
     i += 1;
     yield str;
+  }
+}
+
+function cardSort(a: Card, b: Card): number {
+  const clan = clanSort(a) - clanSort(b);
+  if (clan !== 0) {
+    return clan;
+  }
+
+  const side = sideSort(a) - sideSort(b);
+  if (side !== 0) {
+    return side;
+  }
+
+  const cardType = cardTypeSort(a) - cardTypeSort(b);
+  if (cardType !== 0) {
+    return cardType;
+  }
+
+  return a.name.localeCompare(b.name);
+}
+
+function clanSort(a: Card): number {
+  switch (a.faction) {
+    case "crab":
+      return 1;
+    case "crane":
+      return 2;
+    case "dragon":
+      return 3;
+    case "lion":
+      return 4;
+    case "phoenix":
+      return 5;
+    case "scorpion":
+      return 6;
+    case "unicorn":
+      return 7;
+    default:
+      return 8;
+  }
+}
+
+function sideSort(a: Card): number {
+  switch (a.side) {
+    case "province":
+      return 1;
+    case "dynasty":
+      return 2;
+    case "conflict":
+      return 3;
+    case "role":
+      return 4;
+    default:
+      return 5;
+  }
+}
+
+function cardTypeSort(a: Card): number {
+  switch (a.type) {
+    case "stronghold":
+      return 1;
+    case "province":
+      return 2;
+    case "holding":
+      return 3;
+    case "character":
+      return 4;
+    case "event":
+      return 5;
+    case "attachment":
+      return 6;
+    case "role":
+      return 7;
+    default:
+      return 8;
   }
 }
 
@@ -26,38 +102,13 @@ fetchCards()
       process.exit(1);
     }
 
-    return packCards.sort((a, b) => {
-      const faction = a.faction.localeCompare(b.faction);
-      if (faction !== 0) {
-        return faction;
-      }
-      const side = a.side.localeCompare(b.side);
-      if (side !== 0) {
-        return side;
-      }
-      const cardType = a.type.localeCompare(b.type);
-      if (cardType !== 0) {
-        return cardType;
-      }
-      return a.id.localeCompare(b.id);
-    });
+    return packCards.sort(cardSort);
   })
   .then((cards) => {
-    const highestDefinedPosition = cards.reduce((pos, card) => {
-      const pStr = card.versions.find((v) => v.pack_id === pack_id)?.position;
-      if (pStr == null) {
-        return pos;
-      }
-      const pNum = parseInt(pStr, 10);
-      if (isNaN(pNum)) {
-        return pos;
-      }
-      return Math.max(pos, pNum);
-    }, 0);
-    const posGen = positionMaker(highestDefinedPosition + 1);
+    const posGen = positionMaker(1);
     return cards.map((c) => {
       const oldVersion = c.versions.find((v) => v.pack_id === pack_id);
-      const position = oldVersion?.position || posGen.next().value!;
+      const position = posGen.next().value!;
       return {
         pack_id,
         position,
@@ -81,7 +132,7 @@ fetchCards()
       },
       method: "POST",
       body: JSON.stringify({ cardsInPacks }),
-    })
+    }),
   )
   .then((res) => console.log(res))
   .catch((res) => console.log(res));
