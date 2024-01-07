@@ -8,37 +8,44 @@ if (!pack || !packCode) {
 
 const PLUS = "+";
 const MINUS = "−";
-const costRestrictionForCard = new Map<string, "on_play" | "constant">([
+
+const ON_PLAY = Symbol("on_play");
+const CONTINUOUS = Symbol("continuous");
+type Restriction = typeof ON_PLAY | typeof CONTINUOUS;
+const costRestrictionForCard = new Map<string, Restriction>([
   // THROUGH THE MISTS
-  ["stinger", "on_play"],
-  ["honest-assessment", "constant"],
+  ["stinger", ON_PLAY],
+  ["honest-assessment", CONTINUOUS],
+  ["scout-s-steed", CONTINUOUS],
+
+  // RESTORATION OF BALANCE
+  ["there-are-no-secrets", ON_PLAY],
 
   // Ancient Secrets
-  ["there-are-no-secrets", "on_play"],
-
-  // Ancient Secrets
-  ["developing-masterpiece", "on_play"],
-  ["promising-hohei", "on_play"],
-  ["writ-of-survey", "on_play"],
-  ["shiba-s-oath", "constant"],
-  ["the-lion-s-shadow", "constant"],
-  ["writ-of-sanctification", "constant"],
-  ["bamboo-tattoo", "constant"],
+  ["developing-masterpiece", ON_PLAY],
+  ["promising-hohei", ON_PLAY],
+  ["writ-of-survey", ON_PLAY],
+  ["shiba-s-oath", CONTINUOUS],
+  ["the-lion-s-shadow", CONTINUOUS],
+  ["writ-of-sanctification", CONTINUOUS],
+  ["bamboo-tattoo", CONTINUOUS],
 
   // CORE 2
-  ["cloud-the-mind-2", "on_play"],
-  ["ward-of-earthen-thorns", "on_play"],
-  ["pacifism", "on_play"],
-  ["sato", "on_play"],
-  ["armor-of-the-fallen", "constant"],
-  ["biting-steel", "constant"],
-  ["centipede-tattoo", "constant"],
-  ["dai-tsuchi", "constant"],
-  ["declaration-of-dominion", "constant"],
-  ["grasp-of-earth-2", "constant"],
-  ["mountain-tattoo", "constant"],
-  ["sashimono", "constant"],
-  ["ward-of-earthen-thorns", "constant"],
+  ["earth-s-stagnation", ON_PLAY],
+  ["cloud-the-mind-2", ON_PLAY],
+  ["ward-of-earthen-thorns", ON_PLAY],
+  ["pacifism", ON_PLAY],
+  ["sato", ON_PLAY],
+  ["sanctified-earth", CONTINUOUS],
+  ["armor-of-the-fallen", CONTINUOUS],
+  ["biting-steel", CONTINUOUS],
+  ["centipede-tattoo", CONTINUOUS],
+  ["dai-tsuchi", CONTINUOUS],
+  ["declaration-of-dominion", CONTINUOUS],
+  ["grasp-of-earth-2", CONTINUOUS],
+  ["mountain-tattoo", CONTINUOUS],
+  ["sashimono", CONTINUOUS],
+  ["ward-of-earthen-thorns", CONTINUOUS],
 ]);
 
 const [traitMap, allCards] = await Promise.all([fetchTraits(), fetchCards()]);
@@ -256,8 +263,8 @@ function influence(c: Card) {
 function costRestriction(c: Card) {
   const r = costRestrictionForCard.get(c.id);
   return {
-    attachment_cost_on_play_restriction: r === "on_play" ? "*" : "",
-    attachment_cost_constant_restriction: r === "constant" ? "[]" : "",
+    attachment_cost_on_play_restriction: r === ON_PLAY ? "*" : "",
+    attachment_cost_constant_restriction: r === CONTINUOUS ? "[]" : "",
   };
 }
 
