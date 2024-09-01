@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "devDependencies": {
-    "@types/node": "^18.11.18",
+    "@types/node": "^22.5.2",
     "typescript": "^5.0.4"
   },
   "scripts": {
